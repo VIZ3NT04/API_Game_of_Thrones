@@ -20,26 +20,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inicializar RecyclerView
+
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AdapterCharacter(charactersList)
         recyclerView.adapter = adapter
 
-        // Configura Retrofit
+
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://anapioficeandfire.com/api/") // Asegúrate de incluir "/api/" al final
+            .baseUrl("https://anapioficeandfire.com/api/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         val apiService = retrofit.create(GameOfThronesApiService::class.java)
 
-        // Llama a la API usando corrutinas
         for (page in 500..583) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val response = apiService.getCharacters(page = page, pageSize = 1)
-                    //charactersList.clear()
                     response.forEach {
                         if (it.name != null && it.name != "" && it.culture != null && it.culture != "") {
                             Log.d("Characters", "Name: ${it.name}, Culture: ${it.culture}")
@@ -47,7 +45,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    // Actualizar el RecyclerView en el hilo principal
                     runOnUiThread {
                         adapter.notifyDataSetChanged()
                     }
