@@ -2,10 +2,8 @@ package com.example.apigameofthrones
 
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,12 +13,18 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
     private lateinit var adapter: AdapterCharacter
+    private lateinit var recyclerView: RecyclerView
+    private val charactersList = mutableListOf<Character>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
+        // Inicializar RecyclerView
+        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = AdapterCharacter(charactersList)
+        recyclerView.adapter = adapter
 
         // Configura Retrofit
         val retrofit = Retrofit.Builder()
@@ -31,20 +35,26 @@ class MainActivity : AppCompatActivity() {
         val apiService = retrofit.create(GameOfThronesApiService::class.java)
 
         // Llama a la API usando corrutinas
-
+        for (page in 500..583) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val response = apiService.getCharacters(page = 583 , pageSize = 1)
+                    val response = apiService.getCharacters(page = page, pageSize = 1)
+                    //charactersList.clear()
                     response.forEach {
                         if (it.name != null && it.name != "" && it.culture != null && it.culture != "") {
                             Log.d("Characters", "Name: ${it.name}, Culture: ${it.culture}")
+                            charactersList.add(it)
                         }
+                    }
 
+                    // Actualizar el RecyclerView en el hilo principal
+                    runOnUiThread {
+                        adapter.notifyDataSetChanged()
                     }
                 } catch (e: Exception) {
                     Log.e("Error", "Error fetching characters: ${e.message}")
                 }
             }
-
+        }
     }
 }
